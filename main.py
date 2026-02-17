@@ -27,8 +27,9 @@ def ensure_directories() -> None:
 
 
 def get_next_version_directory() -> Path:
+    config.PUBLIC_PATH.mkdir(parents=True, exist_ok=True)
     existing_versions = []
-    for candidate in config.ROOT_PATH.iterdir():
+    for candidate in config.PUBLIC_PATH.iterdir():
         if not candidate.is_dir():
             continue
         if not candidate.name.startswith(config.OUTPUT_VERSION_PREFIX):
@@ -37,7 +38,7 @@ def get_next_version_directory() -> Path:
         if suffix.isdigit():
             existing_versions.append(int(suffix))
     next_index = max(existing_versions, default=0) + 1
-    version_dir = config.ROOT_PATH / f"{config.OUTPUT_VERSION_PREFIX}{next_index}"
+    version_dir = config.PUBLIC_PATH / f"{config.OUTPUT_VERSION_PREFIX}{next_index}"
     version_dir.mkdir(parents=True, exist_ok=True)
     return version_dir
 
@@ -161,8 +162,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--base-path",
         type=str,
-        default="/Users/xavi/Desktop/MHRA analysis/Update the MHRA links/final",
-        help="Base path reference included in mhra_structure_mapping.json metadata.",
+        default=None,
+        help="Base path reference included in mhra_structure_mapping.json metadata. Defaults to the project output folder.",
     )
     return parser.parse_args()
 
@@ -173,12 +174,13 @@ def main() -> None:
     if version_label is None:
         today = datetime.now(tz=timezone.utc)
         version_label = f"4.0.{today.strftime('%d.%m.%Y')}"
+    base_path: str = args.base_path if args.base_path is not None else str(config.LATEST_OUTPUT_PATH)
     asyncio.run(
         execute_scrape(
             headless=not args.no_headless,
             request_delay=args.request_delay,
             version_label=version_label,
-            base_path=args.base_path,
+            base_path=base_path,
         )
     )
 

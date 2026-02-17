@@ -43,10 +43,11 @@ LETTERS = [
     "9",
 ]
 
-ROOT_PATH = Path("/Users/xavi/Desktop/App Maintenance MyMedsUK/MHRA database update system")
-PERFECT_EXAMPLE_PATH = ROOT_PATH / "Perfect Example"
-BACKEND_PATH = PERFECT_EXAMPLE_PATH / "Backend"
-LATEST_OUTPUT_PATH = ROOT_PATH / "Original_Overwriting_latest_Version"
+# Root = Backend folder (where main.py and this config live)
+BACKEND_PATH = Path(__file__).resolve().parent
+# Generated files go in Backend/public (latest overwritten here; versioned in public/Version N)
+PUBLIC_PATH = BACKEND_PATH / "public"
+LATEST_OUTPUT_PATH = PUBLIC_PATH
 OUTPUT_VERSION_PREFIX = "Version "
 GENERATED_FILES = {
     "mhra_ultra": "mhra_ultra_3.0.json",
