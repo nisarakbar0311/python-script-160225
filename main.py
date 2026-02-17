@@ -81,10 +81,14 @@ async def execute_scrape(
     upload_to_firebase: bool = False,
     firebase_credentials: Optional[str] = None,
     firebase_bucket: Optional[str] = None,
+    letters_override: Optional[list] = None,
+    max_substances: Optional[int] = None,
+    max_products: Optional[int] = None,
 ) -> None:
     ensure_directories()
     version_directory = get_next_version_directory()
 
+    letters = letters_override if letters_override is not None else config.LETTERS
     console = Console()
     progress = Progress(
         SpinnerColumn(),
@@ -98,7 +102,7 @@ async def execute_scrape(
 
     tasks = {}
     with progress:
-        tasks["letters"] = progress.add_task("Letters", total=len(config.LETTERS))
+        tasks["letters"] = progress.add_task("Letters", total=len(letters))
         tasks["substances"] = progress.add_task("Substances", total=None)
         tasks["products"] = progress.add_task("Products", total=None)
         tasks["documents"] = progress.add_task("Documents", total=None)
@@ -109,6 +113,9 @@ async def execute_scrape(
             console=console,
             progress=progress,
             progress_tasks=tasks,
+            letters_override=letters_override,
+            max_substances=max_substances,
+            max_products=max_products,
         ) as extractor:
             try:
                 extraction_results, pdf_links, stats = await extractor.run()
@@ -209,6 +216,11 @@ def parse_arguments() -> argparse.Namespace:
         default=None,
         help="Path to Firebase service account JSON. Otherwise uses GOOGLE_APPLICATION_CREDENTIALS.",
     )
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Test run: letter A only, 2 substances, 10 products per substance. Writes full file set to public/.",
+    )
     return parser.parse_args()
 
 
@@ -219,6 +231,14 @@ def main() -> None:
         today = datetime.now(tz=timezone.utc)
         version_label = f"4.0.{today.strftime('%d.%m.%Y')}"
     base_path: str = args.base_path if args.base_path is not None else str(config.LATEST_OUTPUT_PATH)
+    letters_override: Optional[list] = None
+    max_substances: Optional[int] = None
+    max_products: Optional[int] = None
+    if args.test:
+        letters_override = ["A"]
+        max_substances = 2
+        max_products = 10
+
     asyncio.run(
         execute_scrape(
             headless=not args.no_headless,
@@ -228,6 +248,9 @@ def main() -> None:
             upload_to_firebase=args.upload_to_firebase,
             firebase_credentials=args.firebase_credentials,
             firebase_bucket=args.firebase_bucket,
+            letters_override=letters_override,
+            max_substances=max_substances,
+            max_products=max_products,
         )
     )
 

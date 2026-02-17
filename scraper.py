@@ -41,6 +41,9 @@ class MHRAExtractor:
         console=None,
         progress=None,
         progress_tasks: Optional[Dict[str, int]] = None,
+        letters_override: Optional[List[str]] = None,
+        max_substances: Optional[int] = None,
+        max_products: Optional[int] = None,
     ) -> None:
         self.headless = headless
         self.request_delay = request_delay
@@ -51,7 +54,10 @@ class MHRAExtractor:
         self.page = None
         self.letters: List[LetterBucket] = []
         self.pdf_links: List[dict] = []
-        self.stats = ScrapeStatistics(total_letters=len(config.LETTERS))
+        self._letters = letters_override if letters_override is not None else config.LETTERS
+        self.max_substances = max_substances
+        self.max_products = max_products
+        self.stats = ScrapeStatistics(total_letters=len(self._letters))
         self.console = console
         self.progress = progress
         self.progress_tasks: Dict[str, int] = progress_tasks or {}
@@ -75,7 +81,7 @@ class MHRAExtractor:
             await self.playwright.stop()
 
     async def run(self) -> Tuple[ExtractionResults, List[dict], ScrapeStatistics]:
-        for letter in config.LETTERS:
+        for letter in self._letters:
             logger.info("Processing letter %s", letter)
             self._log(f"[bold cyan]Letter[/bold cyan]: {letter}")
             self._progress_set_description("letters", f"Letter {letter}")
@@ -120,6 +126,9 @@ class MHRAExtractor:
         substances = await collect_links(self.page, "nav ul li.substance-name a", "/substance/")
         if not substances:
             substances = await collect_links(self.page, "nav ul li a", "/substance/")
+        if self.max_substances is not None:
+            substances = substances[: self.max_substances]
+            self._log(f"[yellow]Test: limiting to {len(substances)} substance(s)[/yellow]")
 
         self._progress_prepare(
             "substances",
@@ -158,6 +167,9 @@ class MHRAExtractor:
         products = await collect_links(self.page, "nav ul li.product-name a", "/product/")
         if not products:
             products = await collect_links(self.page, "nav ul li a", "/product/")
+        if self.max_products is not None:
+            products = products[: self.max_products]
+            self._log(f"[yellow]Test: limiting to {len(products)} product(s)[/yellow]")
 
         self._progress_prepare(
             "products",

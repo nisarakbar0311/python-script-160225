@@ -39,6 +39,9 @@ python main.py --version-label "4.0.manual" --base-path "/path/to/your/output"
 
 # Upload generated files to Firebase Storage after extraction
 python main.py --upload-to-firebase
+
+# Test run: letter A only, 2 substances, 10 products per substance
+python main.py --test
 ```
 
 ### 3. Where output goes
@@ -68,6 +71,7 @@ Generated files in each folder:
 | `--upload-to-firebase` | Upload generated JSON files to Firebase Storage after extraction |
 | `--firebase-bucket NAME` | Firebase Storage bucket (overrides `FIREBASE_STORAGE_BUCKET` env var) |
 | `--firebase-credentials PATH` | Path to service account JSON (overrides `GOOGLE_APPLICATION_CREDENTIALS`) |
+| `--test` | Test run: letter A only, 2 substances, 10 products per substance (writes full file set to `public/`) |
 
 ## Firebase Storage upload
 
