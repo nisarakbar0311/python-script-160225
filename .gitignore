@@ -53,3 +53,5 @@ test-results/
 # Optional: uncomment if you don't want to track generated output in this repo
 # Original_Overwriting_latest_Version/
 # Version */
+
+serviceAccountKey.json
