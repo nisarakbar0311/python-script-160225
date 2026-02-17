@@ -36,6 +36,9 @@ python main.py --request-delay 0.5
 
 # Custom version label and base path for the mapping file
 python main.py --version-label "4.0.manual" --base-path "/path/to/your/output"
+
+# Upload generated files to Firebase Storage after extraction
+python main.py --upload-to-firebase
 ```
 
 ### 3. Where output goes
@@ -62,8 +65,27 @@ Generated files in each folder:
 | `--request-delay SECS` | Delay in seconds between page loads (default: 0.15) |
 | `--version-label LABEL` | Label stored in `update_certificate.json` (default: `4.0.DD.MM.YYYY`) |
 | `--base-path PATH` | Base path written into `mhra_structure_mapping.json` (default: latest output folder) |
+| `--upload-to-firebase` | Upload generated JSON files to Firebase Storage after extraction |
+| `--firebase-bucket NAME` | Firebase Storage bucket (overrides `FIREBASE_STORAGE_BUCKET` env var) |
+| `--firebase-credentials PATH` | Path to service account JSON (overrides `GOOGLE_APPLICATION_CREDENTIALS`) |
+
+## Firebase Storage upload
+
+With `--upload-to-firebase`, the four generated JSON files are uploaded to Firebase Storage:
+
+1. **Bucket:** Set `FIREBASE_STORAGE_BUCKET` (e.g. `your-project.appspot.com`) or use `--firebase-bucket`.
+2. **Credentials:** Use a [Firebase service account key](https://firebase.google.com/docs/admin/setup#initialize-sdk) (JSON). Either set `GOOGLE_APPLICATION_CREDENTIALS` to its path, or pass `--firebase-credentials /path/to/serviceAccountKey.json`.
+3. **Paths in Storage:** Latest: `{prefix}/latest/<filename>.json`; versioned: `{prefix}/{version_label}/<filename>.json`. Default prefix is `mhra`; set `FIREBASE_STORAGE_PREFIX` to change it.
+
+Example:
+
+```bash
+export FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+export GOOGLE_APPLICATION_CREDENTIALS=./serviceAccountKey.json
+python main.py --upload-to-firebase
+```
 
 ## Requirements
 
 - Python 3.10+
-- Dependencies in `requirements.txt` (Playwright, BeautifulSoup, httpx, Pydantic, tenacity, rich)
+- Dependencies in `requirements.txt` (Playwright, BeautifulSoup, httpx, Pydantic, tenacity, rich, firebase-admin)

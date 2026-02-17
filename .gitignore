@@ -45,6 +45,11 @@ playwright-report/
 test-results/
 .playwright/
 
+# Firebase / Google credentials (do not commit)
+*serviceAccount*.json
+*service-account*.json
+*-firebase-adminsdk-*.json
+
 # Optional: uncomment if you don't want to track generated output in this repo
 # Original_Overwriting_latest_Version/
 # Version */

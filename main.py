@@ -19,6 +19,7 @@ from rich.progress import (
 )
 
 import config
+from firebase_upload import upload_generated_files
 from scraper import MHRAExtractor, NavigationFailure
 
 
@@ -72,7 +73,15 @@ def build_update_certificate(stats: dict, version_label: str, generated_at: str)
     }
 
 
-async def execute_scrape(headless: bool, request_delay: float, version_label: str, base_path: str) -> None:
+async def execute_scrape(
+    headless: bool,
+    request_delay: float,
+    version_label: str,
+    base_path: str,
+    upload_to_firebase: bool = False,
+    firebase_credentials: Optional[str] = None,
+    firebase_bucket: Optional[str] = None,
+) -> None:
     ensure_directories()
     version_directory = get_next_version_directory()
 
@@ -139,6 +148,24 @@ async def execute_scrape(headless: bool, request_delay: float, version_label: st
         source = config.LATEST_OUTPUT_PATH / filename
         shutil.copy2(source, version_directory / filename)
 
+    if upload_to_firebase:
+        bucket = firebase_bucket or config.FIREBASE_STORAGE_BUCKET
+        if not bucket:
+            console.print("[red]Firebase upload skipped: no bucket. Set FIREBASE_STORAGE_BUCKET or --firebase-bucket.[/red]")
+        else:
+            try:
+                upload_generated_files(
+                    latest_path=config.LATEST_OUTPUT_PATH,
+                    version_label=version_label,
+                    bucket_name=bucket,
+                    storage_prefix=config.FIREBASE_STORAGE_PREFIX,
+                    credentials_path=firebase_credentials,
+                )
+                console.print("[green]Files uploaded to Firebase Storage.[/green]")
+            except Exception as e:
+                console.print(f"[red]Firebase upload failed:[/red] {e}")
+                raise SystemExit(1) from e
+
     console.print("[green]Extraction complete.[/green]")
     console.print(f"[cyan]Latest dataset updated at:[/cyan] {config.LATEST_OUTPUT_PATH}")
     console.print(f"[cyan]Version snapshot stored at:[/cyan] {version_directory}")
@@ -165,6 +192,23 @@ def parse_arguments() -> argparse.Namespace:
         default=None,
         help="Base path reference included in mhra_structure_mapping.json metadata. Defaults to the project output folder.",
     )
+    parser.add_argument(
+        "--upload-to-firebase",
+        action="store_true",
+        help="Upload generated JSON files to Firebase Storage (requires bucket and credentials).",
+    )
+    parser.add_argument(
+        "--firebase-bucket",
+        type=str,
+        default=None,
+        help="Firebase Storage bucket name. Overrides FIREBASE_STORAGE_BUCKET env var.",
+    )
+    parser.add_argument(
+        "--firebase-credentials",
+        type=str,
+        default=None,
+        help="Path to Firebase service account JSON. Otherwise uses GOOGLE_APPLICATION_CREDENTIALS.",
+    )
     return parser.parse_args()
 
 
@@ -181,6 +225,9 @@ def main() -> None:
             request_delay=args.request_delay,
             version_label=version_label,
             base_path=base_path,
+            upload_to_firebase=args.upload_to_firebase,
+            firebase_credentials=args.firebase_credentials,
+            firebase_bucket=args.firebase_bucket,
         )
     )
 

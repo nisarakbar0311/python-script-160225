@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 BASE_URL = "https://products.mhra.gov.uk"
@@ -60,4 +61,8 @@ DEFAULT_HEADLESS = True
 NAVIGATION_TIMEOUT_MS = 90000
 REQUEST_DELAY_SECONDS = 0.15
 MAX_RETRIES = 3
+
+# Firebase Storage (used when --upload-to-firebase is set)
+FIREBASE_STORAGE_BUCKET = os.environ.get("FIREBASE_STORAGE_BUCKET", "")
+FIREBASE_STORAGE_PREFIX = os.environ.get("FIREBASE_STORAGE_PREFIX", "mhra")
 
